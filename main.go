@@ -292,8 +292,10 @@ func matchCommands(commandsRun map[string]*command, path string) {
 		if command.pattern != nil {
 			if command.pattern.MatchString(path) {
 				commandStr := command.pattern.ReplaceAllString(command.Command, path)
-				commandsRun[commandStr] = command
-				trace("match command %s: %s", commandName, commandStr)
+				if _, found := commandsRun[commandStr]; !found {
+					commandsRun[commandStr] = command
+					trace("match command %s: %s", commandName, commandStr)
+				}
 			}
 		}
 	}
