@@ -1,0 +1,13 @@
+#devPort: 8888
+refresh: .1s
+commands:
+  build:
+    match: ".go$"
+    command: "go build -o=testcmd ."
+    continue: runapp
+    wait: true
+  runapp:
+    match: "test.txt$"
+    command: "./testcmd"
+    wait: true
+    onexit: "rm testcmd test.txt test.out.txt"

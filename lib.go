@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -65,13 +66,8 @@ func (s *Service) Init() {
 			port, _ := strconv.Atoi(s.AppPort)
 			s.AppPort = fmt.Sprint(port + 1)
 		}
-	} else {
-		if s.AppPort == "" {
-			s.AppPort = "8080"
-		}
-		if s.DevPort == "" {
-			s.DevPort = "8888"
-		}
+	} else if s.DevPort != "" && s.AppPort == "" {
+		s.AppPort = "8080"
 	}
 
 	if _tickerDuration != nil && *_tickerDuration != "" {
@@ -79,14 +75,12 @@ func (s *Service) Init() {
 	} else if s.Refresh == "" {
 		s.Refresh = "2s"
 	}
+
+	s.Dir, _ = filepath.Abs(s.Dir)
 }
 
 func (s *Service) GetRoot() string {
-	if s.Dir == "" {
-		s.Dir, _ = os.Getwd()
-	}
 	return s.Dir
-
 }
 
 func (s *Service) GetEnv() []string {

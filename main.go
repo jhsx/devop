@@ -115,7 +115,7 @@ func main() {
 
 	go func() {
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGSTOP, syscall.SIGKILL, syscall.SIGTERM)
 		<-c
 		for commandName, command := range commands {
 			command.forceKillAllProcess()
@@ -139,35 +139,39 @@ func main() {
 	go trackModifications()
 
 	trace("starting auto-refresh daemon")
-	autoRefresh()
+	autoRefresher()
 
-	trace("starting proxy server on: http://localhost:%v -> http://localhost:%v", devService.DevPort, devService.AppPort)
-	http.ListenAndServe(fmt.Sprintf(":%s", devService.DevPort), &httputil.ReverseProxy{
-		Director: director,
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			Dial: func(network, address string) (net.Conn, error) {
-				con, err := dialer.Dial(network, address)
-				if err != nil {
-					var i = 0
-					for {
-						<-time.After(time.Millisecond * 10)
-						con, err = dialer.Dial(network, address)
-						if err == nil || i > 500 {
-							break
+	if devService.DevPort != "" {
+		trace("starting proxy server on: http://localhost:%v -> http://localhost:%v", devService.DevPort, devService.AppPort)
+		http.ListenAndServe(fmt.Sprintf(":%s", devService.DevPort), &httputil.ReverseProxy{
+			Director: director,
+			Transport: &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				Dial: func(network, address string) (net.Conn, error) {
+					con, err := dialer.Dial(network, address)
+					if err != nil {
+						var i = 0
+						for {
+							<-time.After(time.Millisecond * 10)
+							con, err = dialer.Dial(network, address)
+							if err == nil || i > 500 {
+								break
+							}
+							i++
 						}
-						i++
 					}
-				}
-				return con, err
+					return con, err
+				},
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
 			},
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-		},
-	})
+		})
+	} else {
+		<-(chan struct{})(nil)
+	}
 }
 
-func autoRefresh() {
+func autoRefresher() {
 	duration, err := time.ParseDuration(devService.Refresh)
 	if err != nil {
 		panic(err)
