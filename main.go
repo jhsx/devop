@@ -288,12 +288,12 @@ func runCommands(commandMap map[string]*command, commandRoot map[string]*command
 }
 
 func matchCommands(commandsRun map[string]*command, path string) {
-	for _, command := range commands {
+	for commandName, command := range commands {
 		if command.pattern != nil {
 			if command.pattern.MatchString(path) {
 				commandStr := command.pattern.ReplaceAllString(command.Command, path)
 				commandsRun[commandStr] = command
-				trace("match command %s: %s", command, commandStr)
+				trace("match command %s: %s", commandName, commandStr)
 			}
 		}
 	}

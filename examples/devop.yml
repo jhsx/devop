@@ -26,7 +26,7 @@ commands: #your commands
     stdout: true # want to print the stdout
     continue: gorun # when this command finish to run continue with command "gorun"
   gorun: # this command don't have a match, so the command will only run when an other command say's continue: to this command name
-    command: ./ekart-serve
+    command: ./yourapp
     env: # list of env
       - MONGOSERVER=localhost
       - MONGODB=test
