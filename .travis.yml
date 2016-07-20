@@ -2,10 +2,9 @@ language: go
 os:
   - linux
   - osx
+install: true
 go:
- - 1.5
  - 1.6.2
  - tip
-
 script:
- - go test -v .
+ - go test .
