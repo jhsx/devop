@@ -1,0 +1,37 @@
+# Copyright 2016 José Santos <henrique_1609@me.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# this is an example devop file that will watch for modifications on .go files and execute go build and rerun the app
+# after build
+
+devPort: 8888 # the port used by the proxy server
+appPort: 8080 # the port used by your app
+commands: #your commands
+  gobuild: #command name
+    match: "\\.go$" # regex pattern, this pattern is tested on all modified files
+    command: "$HOME/tipgo/go/bin/go build -i -gcflags=-N" # the command that need to be executed when a pattern match on modifications
+    wait: true # need to wait this command to finish before continue with the next command
+    stderr: true # want to print the stderr
+    stdout: true # want to print the stdout
+    continue: gorun # when this command finish to run continue with command "gorun"
+  gorun: # this command don't have a match, so the command will only run when an other command say's continue: to this command name
+    command: ./ekart-serve
+    env: # list of env
+      - MONGOSERVER=localhost
+      - MONGODB=test
+      - PORT=:8080
+      - MODE=DEV
+    stderr: true
+    stdout: true
+    onexit: rm ekart-serve # command to be executed when devop exits
