@@ -35,7 +35,7 @@ func trackModifications() {
 		for ev := range fse.Events {
 			debug("event: %q", ev.Name)
 			pendingMx.Lock()
-			matchCommands(pendingCommands, path.Join(root, event.Path))
+			matchCommands(pendingCommands, path.Join(root, ev.Name))
 			pendingMx.Unlock()
 		}
 	}()
