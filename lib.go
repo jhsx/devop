@@ -24,28 +24,28 @@ import (
 )
 
 type Service struct {
-	DevPort string
-	AppPort string
-	Refresh string
-	Dir     string
+	DevPort  string
+	AppPort  string
+	Refresh  string
+	Dir      string
 
 	Env      []string
 	Commands map[string]*command
 }
 
 type command struct {
-	Building       string
-	Match, Command string
-	Continue       string
-	Oninit, Onexit string
-	Dir            string
-	Env            []string
+	Building             string
+	Match, Command       string
+	Continue             string
+	Oninit, Onexit       string
+	Dir                  string
+	Env                  []string
 
 	Wait, Stderr, Stdout bool
 
-	pattern *regexp.Regexp
+	pattern              *regexp.Regexp
 
-	running map[string]*exec.Cmd
+	running              map[string]*exec.Cmd
 }
 
 func (s *Service) Init() {
@@ -76,7 +76,11 @@ func (s *Service) Init() {
 		s.Refresh = "2s"
 	}
 
-	s.Dir, _ = filepath.Abs(s.Dir)
+	if s.Dir == "" {
+		s.Dir, _ = os.Getwd()
+	} else {
+		s.Dir, _ = filepath.Abs(s.Dir)
+	}
 }
 
 func (s *Service) GetRoot() string {
