@@ -27,9 +27,11 @@ import (
 	"os/signal"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
+	"unicode/utf8"
 )
 
 var (
@@ -100,7 +102,7 @@ func main() {
 
 		if command.Oninit != "" {
 			trace("Running init command for %s: %q", commandName, command.Oninit)
-			cmd := exec.Command("bash", "-c", command.Oninit)
+			cmd := newProcessCommand(command.Oninit)
 			cmd.Env = command.Env
 			err = cmd.Run()
 			if err != nil {
@@ -121,7 +123,7 @@ func main() {
 			command.forceKillAllProcess()
 			if command.Onexit != "" {
 				trace("running on exit command of %s", commandName)
-				cmd := exec.Command("bash", "-c", command.Onexit)
+				cmd := newProcessCommand(command.Onexit)
 				cmd.Env = command.Env
 				cmd.Run()
 			}
@@ -230,7 +232,7 @@ func runCommand(cmdString string, command *command, commandRoot map[string]*comm
 		killCommand(cmdString, command, commandRoot)
 	}
 
-	cmd := exec.Command("bash", "-c", cmdString)
+	cmd := newProcessCommand(cmdString)
 	cmd.Env = command.Env
 	if command.Dir != "" {
 		cmd.Dir = command.Dir
@@ -265,6 +267,100 @@ func runCommand(cmdString string, command *command, commandRoot map[string]*comm
 		}
 	}
 
+}
+
+func BreakCommandString(commandStr string) []string {
+	var (
+		commandBreak []string
+		lexState     = 0
+		lexStart     = 0
+		scapeFound   = false
+	)
+	const lexNone = 0
+	const lexName = 1
+	const lexStringSingle = 2
+	const lexString = 3
+
+	for pos, _rune := range commandStr {
+
+		if lexState == lexNone {
+			switch _rune {
+			case '\t', ' ':
+			case '"':
+				lexState = lexString
+				lexStart = pos
+			case '\'':
+				lexState = lexStringSingle
+				lexStart = pos
+			default:
+				lexState = lexName
+				lexStart = pos
+			}
+		} else if lexState == lexString {
+
+			if scapeFound {
+				scapeFound = false
+				continue
+			}
+
+			switch _rune {
+			case '"':
+				_break, err := unQuote(commandStr[lexStart : pos+1])
+				if err != nil {
+					trace("unexpected error parsing command string: %s", err)
+					os.Exit(0)
+				}
+				commandBreak = append(commandBreak, _break)
+				lexState = lexNone
+				lexStart = pos
+			case '\\':
+				scapeFound = true
+			}
+
+		} else if lexState == lexStringSingle {
+
+			if scapeFound {
+				scapeFound = false
+				continue
+			}
+
+			switch _rune {
+			case '\'':
+				_break, err := unQuote(commandStr[lexStart : pos+1])
+				if err != nil {
+					trace("unexpected error parsing command string: %s", err)
+					os.Exit(0)
+				}
+				commandBreak = append(commandBreak, _break)
+				lexState = lexNone
+				lexStart = pos
+			case '\\':
+				scapeFound = true
+			}
+
+		} else if lexState == lexName {
+			switch _rune {
+			case '\t', ' ':
+				commandBreak = append(commandBreak, commandStr[lexStart:pos])
+				lexStart = pos
+				lexState = lexNone
+			}
+		}
+	}
+
+	if lexState == lexName {
+		commandBreak = append(commandBreak, commandStr[lexStart:])
+	} else if lexState != lexNone {
+		trace("unexpected error command string: unclosed string literal")
+		os.Exit(0)
+	}
+
+	return commandBreak
+}
+
+func newProcessCommand(commandStr string) *exec.Cmd {
+	command := BreakCommandString(commandStr)
+	return exec.Command(command[0], command[1:]...)
 }
 
 // runCommands runs a list of commands, commandMap is a map of commandString and *command,
@@ -335,4 +431,74 @@ func (cmd *command) forceKillAllProcess() {
 		killAProcessGroup(command)
 		delete(cmd.running, cmdString)
 	}
+}
+
+// Unquote interprets s as a single-quoted, double-quoted,
+// or backquoted Go string literal, returning the string value
+// that s quotes.  (If s is single-quoted, it would be a Go
+// character literal; Unquote returns the corresponding
+// one-character string.)
+func unQuote(s string) (t string, err error) {
+	n := len(s)
+	if n < 2 {
+		return "", strconv.ErrSyntax
+	}
+	quote := s[0]
+	if quote != s[n-1] {
+		return "", strconv.ErrSyntax
+	}
+	s = s[1 : n-1]
+
+	if quote == '`' {
+		if contains(s, '`') {
+			return "", strconv.ErrSyntax
+		}
+		return s, nil
+	}
+	if quote != '"' && quote != '\'' {
+		return "", strconv.ErrSyntax
+	}
+	if contains(s, '\n') {
+		return "", strconv.ErrSyntax
+	}
+
+	// Is it trivial?  Avoid allocation.
+	if !contains(s, '\\') && !contains(s, quote) {
+		switch quote {
+		case '"':
+			return s, nil
+		case '\'':
+			r, size := utf8.DecodeRuneInString(s)
+			if size == len(s) && (r != utf8.RuneError || size != 1) {
+				return s, nil
+			}
+		}
+	}
+
+	var runeTmp [utf8.UTFMax]byte
+	buf := make([]byte, 0, 3*len(s)/2) // Try to avoid more allocations.
+	for len(s) > 0 {
+		c, multibyte, ss, err := strconv.UnquoteChar(s, quote)
+		if err != nil {
+			return "", err
+		}
+		s = ss
+		if c < utf8.RuneSelf || !multibyte {
+			buf = append(buf, byte(c))
+		} else {
+			n := utf8.EncodeRune(runeTmp[:], c)
+			buf = append(buf, runeTmp[:n]...)
+		}
+	}
+	return string(buf), nil
+}
+
+// contains reports whether the string contains the byte c.
+func contains(s string, c byte) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] == c {
+			return true
+		}
+	}
+	return false
 }

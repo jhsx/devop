@@ -34,4 +34,5 @@ commands: #your commands
       - MODE=DEV
     stderr: true
     stdout: true
-    onexit: rm ekart-serve # command to be executed when devop exits
+    kill: true # this command need to be killed every re run
+    onexit: rm yourapp # command to be executed when devop exits
