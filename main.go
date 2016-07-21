@@ -26,8 +26,8 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -35,8 +35,8 @@ import (
 )
 
 var (
-	_port = flag.String("p", "", "-p=\"8080:8888\" specifies dev and serve ports")
-	_debug = flag.Bool("v", false, "-v enter verbose mode")
+	_port           = flag.String("p", "", "-p=\"8080:8888\" specifies dev and serve ports")
+	_debug          = flag.Bool("v", false, "-v enter verbose mode")
 	_tickerDuration = flag.String("t", "", "-t=1s set's a timeout to check for changes and re-run the commands if needed")
 )
 
@@ -73,44 +73,9 @@ func main() {
 
 	appHost = fmt.Sprintf("%s:%s", "127.0.0.1", devService.AppPort)
 
-	environ := devService.GetEnv()
 	root = devService.GetRoot()
 	commands = devService.Commands
 
-	for commandName, command := range commands {
-		if *_debug {
-			trace("loading command: %v pattern: %v cmd: %v", commandName, command.Match, command.Command)
-		}
-
-		if command.Match != "" {
-			command.pattern = regexp.MustCompile(command.Match)
-		}
-
-		if command.Dir != "" {
-			command.Dir = os.ExpandEnv(command.Dir)
-		}
-
-		if !command.Wait {
-			command.running = make(map[string]*exec.Cmd)
-		}
-		if len(command.Env) > 0 {
-			for i := 0; i < len(command.Env); i++ {
-				command.Env[i] = os.ExpandEnv(command.Env[i])
-			}
-			command.Env = append(append(make([]string, 0, len(environ)), environ...), command.Env...)
-		}
-
-		if command.Oninit != "" {
-			trace("Running init command for %s: %q", commandName, command.Oninit)
-			cmd := newProcessCommand(command.Oninit)
-			cmd.Env = command.Env
-			err = cmd.Run()
-			if err != nil {
-				trace("err:%s", err)
-				return
-			}
-		}
-	}
 	trace("commands are loaded")
 	trace("running initial command scan")
 	runCommands(scanAndGetCommands(root, commands), commands)
@@ -272,9 +237,9 @@ func runCommand(cmdString string, command *command, commandRoot map[string]*comm
 func BreakCommandString(commandStr string) []string {
 	var (
 		commandBreak []string
-		lexState = 0
-		lexStart = 0
-		scapeFound = false
+		lexState     = 0
+		lexStart     = 0
+		scapeFound   = false
 	)
 	const lexNone = 0
 	const lexName = 1
@@ -305,7 +270,7 @@ func BreakCommandString(commandStr string) []string {
 
 			switch _rune {
 			case '"':
-				_break, err := unQuote(commandStr[lexStart : pos + 1])
+				_break, err := unQuote(commandStr[lexStart : pos+1])
 				if err != nil {
 					trace("unexpected error parsing command string: %s", err)
 					os.Exit(0)
@@ -326,7 +291,7 @@ func BreakCommandString(commandStr string) []string {
 
 			switch _rune {
 			case '\'':
-				_break, err := unQuote(commandStr[lexStart : pos + 1])
+				_break, err := unQuote(commandStr[lexStart : pos+1])
 				if err != nil {
 					trace("unexpected error parsing command string: %s", err)
 					os.Exit(0)
@@ -360,6 +325,9 @@ func BreakCommandString(commandStr string) []string {
 
 func newProcessCommand(commandStr string) *exec.Cmd {
 	command := BreakCommandString(commandStr)
+	if strings.HasPrefix(command[0], "./") || strings.HasPrefix(command[0], "../") {
+		command[0], _ = filepath.Abs(command[0])
+	}
 	return exec.Command(command[0], command[1:]...)
 }
 
@@ -446,10 +414,10 @@ func unQuote(s string) (t string, err error) {
 		return "", strconv.ErrSyntax
 	}
 	quote := s[0]
-	if quote != s[n - 1] {
+	if quote != s[n-1] {
 		return "", strconv.ErrSyntax
 	}
-	s = s[1 : n - 1]
+	s = s[1 : n-1]
 
 	if quote == '`' {
 		if contains(s, '`') {
@@ -478,7 +446,7 @@ func unQuote(s string) (t string, err error) {
 	}
 
 	var runeTmp [utf8.UTFMax]byte
-	buf := make([]byte, 0, 3 * len(s) / 2) // Try to avoid more allocations.
+	buf := make([]byte, 0, 3*len(s)/2) // Try to avoid more allocations.
 	for len(s) > 0 {
 		c, multibyte, ss, err := strconv.UnquoteChar(s, quote)
 		if err != nil {

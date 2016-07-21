@@ -24,28 +24,28 @@ import (
 )
 
 type Service struct {
-	DevPort  string
-	AppPort  string
-	Refresh  string
-	Dir      string
+	DevPort string
+	AppPort string
+	Refresh string
+	Dir     string
 
 	Env      []string
 	Commands map[string]*command
 }
 
 type command struct {
-	Building             string
-	Match, Command       string
-	Continue             string
-	Oninit, Onexit       string
-	Dir                  string
-	Env                  []string
+	Building       string
+	Match, Command string
+	Continue       string
+	Oninit, Onexit string
+	Dir            string
+	Env            []string
 
 	Wait, Stderr, Stdout bool
 
-	pattern              *regexp.Regexp
+	pattern *regexp.Regexp
 
-	running              map[string]*exec.Cmd
+	running map[string]*exec.Cmd
 }
 
 func (s *Service) Init() {
@@ -81,6 +81,66 @@ func (s *Service) Init() {
 	} else {
 		s.Dir, _ = filepath.Abs(s.Dir)
 	}
+
+	s.Env = append(append([]string{}, os.Environ()...), s.Env...)
+	sExpander := expander(s.Env)
+
+	for commandName, command := range s.Commands {
+
+		if *_debug {
+			trace("loading command: %v pattern: %v cmd: %v", commandName, command.Match, command.Command)
+		}
+
+		if command.Match != "" {
+			command.pattern = regexp.MustCompile(command.Match)
+		}
+
+		if !command.Wait {
+			command.running = make(map[string]*exec.Cmd)
+		}
+
+		if len(command.Env) > 0 {
+			for i := 0; i < len(command.Env); i++ {
+				command.Env[i] = os.Expand(command.Env[i], sExpander)
+			}
+			command.Env = append(append(make([]string, 0, len(s.Env)), s.Env...), command.Env...)
+		} else {
+			command.Env = s.Env
+		}
+
+		expander := expander(command.Env)
+
+		command.Onexit = os.Expand(command.Onexit, expander)
+		command.Oninit = os.Expand(command.Oninit, expander)
+		command.Command = os.Expand(command.Command, expander)
+
+		if command.Dir != "" {
+			command.Dir = os.Expand(command.Dir, expander)
+		}
+
+		if command.Oninit != "" {
+			trace("Running init command for %s: %q", commandName, command.Oninit)
+			cmd := newProcessCommand(command.Oninit)
+			cmd.Env = command.Env
+			err := cmd.Run()
+			if err != nil {
+				trace("err:%s", err)
+				return
+			}
+		}
+	}
+}
+
+func expander(envs []string) func(string) string {
+	return func(s string) (found string) {
+		for _, v := range envs {
+			env := strings.SplitN(v, "=", 2)
+			if env[0] == s {
+				found = env[1]
+			}
+		}
+		return
+	}
 }
 
 func (s *Service) GetRoot() string {
@@ -88,5 +148,5 @@ func (s *Service) GetRoot() string {
 }
 
 func (s *Service) GetEnv() []string {
-	return append(os.Environ(), s.Env...)
+	return s.Env
 }

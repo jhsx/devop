@@ -65,7 +65,3 @@ func TestDevOP(t *testing.T) {
 	os.Remove("test.txt")
 	os.Remove("testcmd")
 }
-
-func TestName(t *testing.T) {
-
-}
