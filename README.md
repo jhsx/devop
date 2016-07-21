@@ -1,4 +1,4 @@
-# DevOp Dev Server [![Build Status](https://travis-ci.org/jhsx/devop.svg?branch=master)](https://travis-ci.org/jhsx/devop)
+# DevOp Dev Server [![Build Status](https://travis-ci.org/jhsx/devop.svg?branch=master)](https://travis-ci.org/jhsx/devop) [![Build status](https://ci.appveyor.com/api/projects/status/eun8c8h8x4u4gnnw?svg=true)](https://ci.appveyor.com/project/jhsx/devop)
 
 Devop is a development server for Go, in devop you can declare commands that will be runned when any file system modification happens.
 

@@ -117,7 +117,7 @@ func main() {
 
 	go func() {
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGSTOP, syscall.SIGKILL, syscall.SIGTERM)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
 		<-c
 		for commandName, command := range commands {
 			command.forceKillAllProcess()
@@ -247,7 +247,7 @@ func runCommand(cmdString string, command *command, commandRoot map[string]*comm
 	}
 
 	if !command.Wait {
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		//cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 		// if command kill option is activated the command will be stored and killed in next match run
 		command.running[cmdString] = cmd
 	}
@@ -414,21 +414,21 @@ func scanAndGetCommands(root string, commands map[string]*command) map[string]*c
 
 func (cmd *command) forceKillProcess(cmdString string) {
 	if command, ok := cmd.running[cmdString]; ok {
-		killAProcessGroup(command)
+		Kill_A_ProcessGroup(command)
 		delete(cmd.running, cmdString)
 	}
 }
 
-func killAProcessGroup(command *exec.Cmd) {
-	pid, _ := syscall.Getpgid(command.Process.Pid)
-	syscall.Kill(-pid, os.Kill.(syscall.Signal))
-	command.Process.Signal(os.Kill)
+func Kill_A_ProcessGroup(command *exec.Cmd) {
+	//pid, _ := syscall.Getpgid(command.Process.Pid)
+	//syscall.Kill(-pid, os.Kill.(syscall.Signal))
+	command.Process.Kill()
 	command.Wait()
 }
 
 func (cmd *command) forceKillAllProcess() {
 	for cmdString, command := range cmd.running {
-		killAProcessGroup(command)
+		Kill_A_ProcessGroup(command)
 		delete(cmd.running, cmdString)
 	}
 }
