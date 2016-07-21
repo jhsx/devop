@@ -77,7 +77,7 @@ func (s *Service) Init() {
 	if _tickerDuration != nil && *_tickerDuration != "" {
 		s.Refresh = *_tickerDuration
 	} else if s.Refresh == "" {
-		s.Refresh = "2s"
+		s.Refresh = ".5s"
 	}
 
 	if s.Dir == "" {
