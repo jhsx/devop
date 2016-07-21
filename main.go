@@ -35,8 +35,8 @@ import (
 )
 
 var (
-	_port           = flag.String("p", "", "-p=\"8080:8888\" specifies dev and serve ports")
-	_debug          = flag.Bool("v", false, "-v enter verbose mode")
+	_port = flag.String("p", "", "-p=\"8080:8888\" specifies dev and serve ports")
+	_debug = flag.Bool("v", false, "-v enter verbose mode")
 	_tickerDuration = flag.String("t", "", "-t=1s set's a timeout to check for changes and re-run the commands if needed")
 )
 
@@ -272,9 +272,9 @@ func runCommand(cmdString string, command *command, commandRoot map[string]*comm
 func BreakCommandString(commandStr string) []string {
 	var (
 		commandBreak []string
-		lexState     = 0
-		lexStart     = 0
-		scapeFound   = false
+		lexState = 0
+		lexStart = 0
+		scapeFound = false
 	)
 	const lexNone = 0
 	const lexName = 1
@@ -305,7 +305,7 @@ func BreakCommandString(commandStr string) []string {
 
 			switch _rune {
 			case '"':
-				_break, err := unQuote(commandStr[lexStart : pos+1])
+				_break, err := unQuote(commandStr[lexStart : pos + 1])
 				if err != nil {
 					trace("unexpected error parsing command string: %s", err)
 					os.Exit(0)
@@ -326,7 +326,7 @@ func BreakCommandString(commandStr string) []string {
 
 			switch _rune {
 			case '\'':
-				_break, err := unQuote(commandStr[lexStart : pos+1])
+				_break, err := unQuote(commandStr[lexStart : pos + 1])
 				if err != nil {
 					trace("unexpected error parsing command string: %s", err)
 					os.Exit(0)
@@ -404,7 +404,9 @@ func matchCommands(commandsRun map[string]*command, path string) {
 func scanAndGetCommands(root string, commands map[string]*command) map[string]*command {
 	commandsRun := map[string]*command{}
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
+		if err != nil {
+			trace("unexpected error walking file system path: %s|%s err: %s", root, path, err)
+		} else if !info.IsDir() {
 			matchCommands(commandsRun, path)
 		}
 		return nil
@@ -444,10 +446,10 @@ func unQuote(s string) (t string, err error) {
 		return "", strconv.ErrSyntax
 	}
 	quote := s[0]
-	if quote != s[n-1] {
+	if quote != s[n - 1] {
 		return "", strconv.ErrSyntax
 	}
-	s = s[1 : n-1]
+	s = s[1 : n - 1]
 
 	if quote == '`' {
 		if contains(s, '`') {
@@ -476,7 +478,7 @@ func unQuote(s string) (t string, err error) {
 	}
 
 	var runeTmp [utf8.UTFMax]byte
-	buf := make([]byte, 0, 3*len(s)/2) // Try to avoid more allocations.
+	buf := make([]byte, 0, 3 * len(s) / 2) // Try to avoid more allocations.
 	for len(s) > 0 {
 		c, multibyte, ss, err := strconv.UnquoteChar(s, quote)
 		if err != nil {
