@@ -24,24 +24,28 @@ import (
 )
 
 type Service struct {
-	DevPort string
-	AppPort string
-	Refresh string
-	Dir     string
+	DevPort string `yaml:"devPort"`
+	AppPort string `yaml:"appPort"`
+	Refresh string `yaml:"refresh"`
+	Dir     string `yaml:"dir"`
 
-	Env      []string
-	Commands map[string]*command
+	Env      []string            `yaml:"env"`
+	Commands map[string]*command `yaml:"commands"`
 }
 
 type command struct {
-	Building       string
-	Match, Command string
-	Continue       string
-	Oninit, Onexit string
-	Dir            string
-	Env            []string
+	Building string   `yaml:"-"`
+	Match    string   `yaml:"match"`
+	Command  string   `yaml:"command"`
+	Continue string   `yaml:"continue"`
+	Oninit   string   `yaml:"oninit"`
+	Onexit   string   `yaml:"onexit"`
+	Dir      string   `yaml:"dir"`
+	Env      []string `yaml:"env"`
 
-	Wait, Stderr, Stdout bool
+	Wait   bool `yaml:"wait"`
+	Stderr bool `yaml:"stderr"`
+	Stdout bool `yaml:"stdout"`
 
 	pattern *regexp.Regexp
 
