@@ -12,7 +12,15 @@ File changed, renamed, removed or created.
 
 Devop lets you program in go as you do with PHP, just refresh the page and you get the last changes.
 
-example yml file:
+## How to use
+
+First install devop with
+```
+go get github.com/jhsx/devop
+```
+Create an devop.yml in the root of your project, then run devop and enjoy your programing time :D.
+
+Example devop.yml file:
 
 ```yaml
 devPort: 8888 # the port used by the proxy server
