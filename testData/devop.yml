@@ -6,8 +6,10 @@ commands:
     command: "go build -o=testcmd ."
     continue: runapp
     wait: true
+    stderr: true
+    stdout: true
   runapp:
     match: "test.txt$"
     command: "./testcmd"
-    wait: true
+    kill: true
     onexit: "rm testcmd test.txt test.out.txt"

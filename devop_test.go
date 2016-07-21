@@ -30,7 +30,7 @@ func TestDevOP(t *testing.T) {
 	}
 
 	var found bool
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 1000; i++ {
 		time.Sleep(time.Millisecond)
 		if n_bytes, err := ioutil.ReadFile("test.out.txt"); err == nil {
 			found = true

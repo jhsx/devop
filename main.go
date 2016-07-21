@@ -27,7 +27,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -323,14 +322,6 @@ func BreakCommandString(commandStr string) []string {
 	return commandBreak
 }
 
-func newProcessCommand(commandStr string) *exec.Cmd {
-	command := BreakCommandString(commandStr)
-	if strings.HasPrefix(command[0], "./") || strings.HasPrefix(command[0], "../") {
-		command[0], _ = filepath.Abs(command[0])
-	}
-	return exec.Command(command[0], command[1:]...)
-}
-
 // runCommands runs a list of commands, commandMap is a map of commandString and *command,
 // this function should be invoked with the first argument result of scanAndGetCommands
 // commandRoot is the map of all commands available is used when a command has continuation
@@ -384,21 +375,21 @@ func scanAndGetCommands(root string, commands map[string]*command) map[string]*c
 
 func (cmd *command) forceKillProcess(cmdString string) {
 	if command, ok := cmd.running[cmdString]; ok {
-		Kill_A_ProcessGroup(command)
+		processKillWait(command)
 		delete(cmd.running, cmdString)
 	}
 }
 
-func Kill_A_ProcessGroup(command *exec.Cmd) {
-	//pid, _ := syscall.Getpgid(command.Process.Pid)
-	//syscall.Kill(-pid, os.Kill.(syscall.Signal))
-	command.Process.Kill()
-	command.Wait()
+func processKillWait(command *exec.Cmd) {
+	if command.Process != nil {
+		command.Process.Kill()
+		command.Wait()
+	}
 }
 
 func (cmd *command) forceKillAllProcess() {
 	for cmdString, command := range cmd.running {
-		Kill_A_ProcessGroup(command)
+		processKillWait(command)
 		delete(cmd.running, cmdString)
 	}
 }
