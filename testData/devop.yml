@@ -3,13 +3,12 @@ refresh: .1s
 commands:
   build:
     match: ".go$"
-    command: "go build -o=testcmd ."
+    command: "go build ."
     continue: runapp
     wait: true
     stderr: true
     stdout: true
   runapp:
     match: "test.txt$"
-    command: "./testcmd"
+    command: "./testData"
     kill: true
-    onexit: "rm testcmd test.txt test.out.txt"

@@ -61,7 +61,10 @@ func TestDevOP(t *testing.T) {
 	//}
 
 	os.Remove("../devop")
-	os.Remove("test.out.txt")
 	os.Remove("test.txt")
-	os.Remove("testcmd")
+	os.Remove("test.out.txt")
+	os.Remove("testData")
+
+	os.Remove("../devop.exe")
+	os.Remove("testData.exe")
 }
