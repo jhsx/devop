@@ -119,7 +119,7 @@ func (s *Service) Init() {
 		command.Command = os.Expand(command.Command, expander)
 
 		if command.Dir != "" {
-			command.Dir = os.Expand(command.Dir, expander)
+			command.Dir, _ = filepath.Abs(os.Expand(command.Dir, expander))
 		}
 
 		if command.Oninit != "" {

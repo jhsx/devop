@@ -16,7 +16,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"net"
@@ -31,6 +30,8 @@ import (
 	"syscall"
 	"time"
 	"unicode/utf8"
+
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -140,7 +141,7 @@ func main() {
 func autoRefresher() {
 	duration, err := time.ParseDuration(devService.Refresh)
 	if err != nil {
-		panic(err)
+		trace("err parsing refresh duration: %s", err)
 	}
 	go func() {
 		for range time.Tick(duration) {
@@ -353,7 +354,7 @@ func matchCommands(commandsRun map[string]*command, path string) {
 				commandStr := command.pattern.ReplaceAllString(command.Command, path)
 				if _, found := commandsRun[commandStr]; !found {
 					commandsRun[commandStr] = command
-					trace("match command %s: %s", commandName, commandStr)
+					debug("match command %s: %s", commandName, commandStr)
 				}
 			}
 		}
@@ -364,7 +365,7 @@ func scanAndGetCommands(root string, commands map[string]*command) map[string]*c
 	commandsRun := map[string]*command{}
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			trace("unexpected error walking file system path: %s|%s err: %s", root, path, err)
+			trace("[warning] unexpected error walking file system path: %s|%s err: %s", root, path, err)
 		} else if !info.IsDir() {
 			matchCommands(commandsRun, path)
 		}

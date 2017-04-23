@@ -1,0 +1,25 @@
+memo = "22d552ecf3b14c3ed75fa445216f634cc907b5a12c4d96ec3462887a647a11b6"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/fsnotify/fsevents"
+  packages = ["."]
+  revision = "3ceee05210c3babaa38cdc9181dabdcc83076a44"
+
+[[projects]]
+  name = "github.com/fsnotify/fsnotify"
+  packages = ["."]
+  revision = "629574ca2a5df945712d3079857300b5e4da0236"
+  version = "v1.4.2"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "ea9bcade75cb975a0b9738936568ab388b845617"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b"

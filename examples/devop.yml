@@ -20,7 +20,7 @@ appPort: 8080 # the port used by your app
 commands: #your commands
   gobuild: #command name
     match: "\\.go$" # regex pattern, this pattern is tested on all modified files
-    command: "$HOME/tipgo/go/bin/go build -i -gcflags=-N" # the command that need to be executed when a pattern match on modifications
+    command: "go build -i -gcflags=-N" # the command that need to be executed when a pattern match on modifications
     wait: true # need to wait this command to finish before continue with the next command
     stderr: true # want to print the stderr
     stdout: true # want to print the stdout
